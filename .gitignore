@@ -1,0 +1,6 @@
+ar-app/assets/images/*
+ar-app/assets/videos/*
+!ar-app/assets/images/.gitkeep
+!ar-app/assets/videos/.gitkeep
+ar-app/assets/targets.mind
+*.pem

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#020b18" />
+  <title>Murals AR — Animation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cyan:  #00d4ff;
+      --teal:  #00b4d8;
+      --deep:  #020b18;
+      --dark:  #0a1628;
+      --gold:  #ffd166;
+      --coral: #ff6b6b;
+      --font:  'Outfit', sans-serif;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--deep);
+      color: #f0f8ff;
+      font-family: var(--font);
+      overflow: hidden;
+    }
+
+    /* ── LOADING STATE ── */
+    #loadingScreen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px;
+      background: radial-gradient(ellipse 120% 80% at 50% 110%, #0d4a7a 0%, transparent 60%),
+                  linear-gradient(180deg, #020b18 0%, #0a1a2e 100%);
+      z-index: 10;
+      transition: opacity 0.5s ease;
+    }
+
+    .loader-icon {
+      font-size: 60px;
+      animation: swim 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes swim {
+      from { transform: translateX(-12px) rotate(-6deg); }
+      to   { transform: translateX(12px)  rotate(6deg); }
+    }
+
+    .loader-title {
+      font-size: 22px; font-weight: 700;
+      background: linear-gradient(90deg, var(--cyan), var(--gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      text-align: center; padding: 0 24px;
+    }
+
+    .loader-sub {
+      font-size: 14px; color: rgba(240,248,255,0.45); font-weight: 300;
+    }
+
+    /* ── VIDEO STATE ── */
+    #videoScreen {
+      position: fixed; inset: 0;
+      background: #000;
+      display: none;
+      flex-direction: column;
+    }
+
+    #mainVideo {
+      flex: 1;
+      width: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    /* ── CONTROLS OVERLAY ── */
+    .controls {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(180deg, rgba(2,11,24,0.85) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .ctrl-title {
+      font-size: 16px; font-weight: 700;
+      background: linear-gradient(90deg, var(--cyan), var(--gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    .ctrl-badge {
+      background: rgba(0,212,255,0.15);
+      border: 1px solid rgba(0,212,255,0.3);
+      border-radius: 50px;
+      padding: 4px 12px;
+      font-size: 12px; font-weight: 600;
+      color: var(--cyan);
+    }
+
+    .bottom-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 20px 24px 32px;
+      display: flex; align-items: center; gap: 12px;
+      background: linear-gradient(0deg, rgba(2,11,24,0.9) 0%, transparent 100%);
+      pointer-events: all;
+    }
+
+    .btn {
+      border: none; border-radius: 50px; cursor: pointer;
+      font-family: var(--font); font-weight: 700;
+      transition: all 0.2s ease;
+    }
+
+    .btn-mute {
+      width: 48px; height: 48px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff; font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btn-mute:active { transform: scale(0.92); }
+
+    .btn-replay {
+      flex: 1;
+      background: linear-gradient(135deg, var(--cyan), var(--teal));
+      color: #020b18;
+      font-size: 15px;
+      padding: 14px 20px;
+    }
+
+    .btn-replay:active { filter: brightness(0.9); }
+
+    /* ── BUBBLES ── */
+    .bubbles {
+      position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+    }
+
+    .bubble {
+      position: absolute; bottom: -40px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(0,212,255,0.25), transparent);
+      border: 1px solid rgba(0,212,255,0.15);
+      animation: rise linear infinite;
+    }
+
+    @keyframes rise {
+      0%   { transform: translateY(0); opacity: 0; }
+      10%  { opacity: 0.8; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(-110vh); opacity: 0; }
+    }
+
+    /* ── ERROR STATE ── */
+    #errorScreen {
+      position: fixed; inset: 0;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; padding: 32px;
+      background: var(--deep);
+      text-align: center;
+    }
+
+    .error-icon { font-size: 52px; }
+    .error-msg { font-size: 18px; font-weight: 600; color: var(--coral); }
+    .error-sub { font-size: 14px; color: rgba(240,248,255,0.5); }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING -->
+  <div id="loadingScreen">
+    <div class="bubbles" id="bubbles"></div>
+    <div class="loader-icon">🐠</div>
+    <div class="loader-title" id="loaderTitle">Chargement…</div>
+    <div class="loader-sub" id="loaderSub">Préparation de l'animation…</div>
+  </div>
+
+  <!-- VIDEO -->
+  <div id="videoScreen">
+    <video id="mainVideo" playsinline loop muted autoplay></video>
+    <div class="controls">
+      <span class="ctrl-title" id="ctrlTitle"></span>
+      <span class="ctrl-badge">AR</span>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn btn-mute" id="muteBtn">🔇</button>
+      <button class="btn btn-replay" onclick="replayVideo()">↺ Rejouer</button>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div id="errorScreen">
+    <div class="error-icon">🐚</div>
+    <div class="error-msg" id="errorMsg">Murale introuvable</div>
+    <div class="error-sub">Vérifiez l'URL et réessayez</div>
+  </div>
+
+  <script>
+    const MURALS = [
+      { id: 1, name: '🧜‍♀️ La Petite Sirène',   video: 'assets/videos/1.mp4' },
+      { id: 2, name: '⭐ Étoile de mer rouge',   video: 'assets/videos/2.mp4' },
+      { id: 3, name: '🏴‍☠️ Coffre au trésor',    video: 'assets/videos/3.mp4' },
+      { id: 4, name: '🐚 Coquillages & étoile', video: 'assets/videos/4.mp4' },
+      { id: 5, name: '🐢 Squirt & Sebastian',    video: 'assets/videos/5.mp4' },
+      { id: 6, name: '🚢 Bateau pirate',         video: 'assets/videos/6.mp4' },
+      { id: 7, name: '🐠 Nemo & Dory',           video: 'assets/videos/7.mp4' },
+      { id: 8, name: "🧽 Bob l'éponge",          video: 'assets/videos/8.mp4' },
+      { id: 9, name: '🐚 Coquille rose',         video: 'assets/videos/9.mp4' },
+    ];
+
+    const params = new URLSearchParams(window.location.search);
+    const id     = parseInt(params.get('id'), 10);
+    const mural  = MURALS.find(m => m.id === id);
+
+    const loadingScreen = document.getElementById('loadingScreen');
+    const videoScreen   = document.getElementById('videoScreen');
+    const errorScreen   = document.getElementById('errorScreen');
+    const mainVideo     = document.getElementById('mainVideo');
+    const muteBtn       = document.getElementById('muteBtn');
+    let muted = true;
+
+    // Spawn bubbles
+    const bc = document.getElementById('bubbles');
+    for (let i = 0; i < 10; i++) {
+      const b = document.createElement('div');
+      b.className = 'bubble';
+      const s = 10 + Math.random() * 30;
+      b.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*8}s;`;
+      bc.appendChild(b);
+    }
+
+    if (!mural) {
+      loadingScreen.style.display = 'none';
+      errorScreen.style.display   = 'flex';
+      document.getElementById('errorMsg').textContent = id
+        ? `Murale #${id} introuvable`
+        : 'Aucune murale spécifiée — scannez le bon QR code';
+    } else {
+      // Update loading text
+      document.getElementById('loaderTitle').textContent = mural.name;
+      document.getElementById('ctrlTitle').textContent   = mural.name;
+      document.title = `Murals AR — ${mural.name}`;
+
+      mainVideo.src = mural.video;
+
+      mainVideo.addEventListener('canplay', () => {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+          loadingScreen.style.display = 'none';
+          videoScreen.style.display   = 'flex';
+        }, 500);
+        mainVideo.play().catch(() => {
+          // Autoplay bloqué — afficher un bouton play
+          showPlayPrompt();
+        });
+      });
+
+      mainVideo.addEventListener('error', () => {
+        loadingScreen.style.display = 'none';
+        errorScreen.style.display   = 'flex';
+        document.getElementById('errorMsg').textContent = 'Vidéo non disponible';
+      });
+
+      mainVideo.load();
+    }
+
+    function showPlayPrompt() {
+      videoScreen.style.display = 'flex';
+      loadingScreen.style.display = 'none';
+      const prompt = document.createElement('div');
+      prompt.style.cssText = `
+        position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+        background:rgba(2,11,24,0.7); z-index:5; cursor:pointer;
+      `;
+      prompt.innerHTML = `<div style="text-align:center">
+        <div style="font-size:64px">▶</div>
+        <div style="font-size:18px;font-weight:700;color:#00d4ff;margin-top:12px">Appuyez pour lire</div>
+      </div>`;
+      prompt.onclick = () => {
+        mainVideo.muted = false;
+        muted = false;
+        muteBtn.textContent = '🔊';
+        mainVideo.play();
+        prompt.remove();
+      };
+      videoScreen.appendChild(prompt);
+    }
+
+    muteBtn.addEventListener('click', () => {
+      muted = !muted;
+      mainVideo.muted = muted;
+      muteBtn.textContent = muted ? '🔇' : '🔊';
+    });
+
+    function replayVideo() {
+      mainVideo.currentTime = 0;
+      mainVideo.play();
+    }
+  </script>
+</body>
+</html>

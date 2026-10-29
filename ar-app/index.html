@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Art AR Gallery</title>
+  <link rel="manifest" href="manifest.json" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="libs/aframe.min.js"></script>
+  <script src="libs/mindar-image-aframe.prod.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Intro View -->
+  <div id="intro-view" class="intro-container">
+    <div class="intro-content">
+      <div class="intro-logo">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+      </div>
+      <h1 class="intro-title">AR Gallery</h1>
+      <p class="intro-subtitle">Point your device at a physical artwork to reveal its animated counterpart.</p>
+      <button id="init-btn" class="btn-primary">
+        Initialize Camera
+      </button>
+      <p class="intro-disclaimer">Camera access is required for this experience.</p>
+    </div>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-overlay hidden">
+    <div class="loading-inner">
+      <div class="spinner"></div>
+      <p class="loading-text" id="loading-message">Starting Engine...</p>
+      <div class="progress-bar-container"><div class="progress-bar-fill" id="progress-fill"></div></div>
+      <p class="loading-subtext" id="loading-detail">This may take a moment.</p>
+      <p class="loading-cached" id="cached-notice" style="display:none">Local cache active for faster loading.</p>
+    </div>
+  </div>
+
+  <!-- Main HUD -->
+  <div id="overlay-hud" class="hud-container hidden">
+    <div class="hud-header">
+      <div class="status-badge">
+        <span class="status-indicator" id="indicator-dot"></span>
+        <span id="status-text">Scanning Environment...</span>
+      </div>
+      <button id="btn-exit" class="btn-icon">✕</button>
+    </div>
+
+    <!-- Scan Frame -->
+    <div class="target-frame-wrapper" id="frame-container">
+      <div class="target-frame">
+        <div class="frame-edge top-left"></div><div class="frame-edge top-right"></div>
+        <div class="frame-edge bottom-left"></div><div class="frame-edge bottom-right"></div>
+        <div class="scan-laser"></div>
+      </div>
+    </div>
+
+    <!-- Tracking Quality -->
+    <div class="signal-container">
+      <div class="signal-label">Tracking Signal</div>
+      <div class="signal-track"><div class="signal-fill" id="signal-level"></div></div>
+    </div>
+
+    <div class="hud-footer">
+      <p class="instruction-box" id="instruction-text">Locate an artwork in the gallery</p>
+      <p class="tip-box" id="user-tip">Ensure the area is well-lit for better tracking.</p>
+    </div>
+  </div>
+
+  <!-- Media Presentation Overlay -->
+  <div id="media-overlay" class="media-container hidden">
+    <div class="media-backdrop"></div>
+    <div class="media-panel">
+      <div class="media-header">
+        <span class="media-title" id="media-heading">Artwork Details</span>
+        <button id="btn-close-media" class="btn-icon">✕</button>
+      </div>
+      <video id="ar-player" class="media-player" playsinline loop muted></video>
+      <div class="media-controls">
+        <button id="btn-audio" class="btn-secondary">Unmute</button>
+        <button id="btn-return-scan" class="btn-secondary">Return to Camera</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- A-Frame AR Context -->
+  <div id="ar-wrapper" class="visibility-hidden">
+    <a-scene
+      id="ar-scene"
+      mindar-image="imageTargetSrc: assets/targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
+      color-space="sRGB"
+      renderer="colorManagement: true"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+    >
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0" id="target-0"><a-box visible="false" scale="0.001 0.001 0.001"></a-box></a-entity>
+      <a-entity mindar-image-target="targetIndex: 1" id="target-1"><a-box visible="false" scale="0.001 0.001 0.001"></a-box></a-entity>
+      <a-entity mindar-image-target="targetIndex: 2" id="target-2"><a-box visible="false" scale="0.001 0.001 0.001"></a-box></a-entity>
+      <a-entity mindar-image-target="targetIndex: 3" id="target-3"><a-box visible="false" scale="0.001 0.001 0.001"></a-box></a-entity>
+      <a-entity mindar-image-target="targetIndex: 4" id="target-4"><a-box visible="false" scale="0.001 0.001 0.001"></a-box></a-entity>
+      <a-entity mindar-image-target="targetIndex: 5" id="target-5"><a-box visible="false" scale="0.001 0.001 0.001"></a-box></a-entity>
+      <a-entity mindar-image-target="targetIndex: 6" id="target-6"><a-box visible="false" scale="0.001 0.001 0.001"></a-box></a-entity>
+      <a-entity mindar-image-target="targetIndex: 7" id="target-7"><a-box visible="false" scale="0.001 0.001 0.001"></a-box></a-entity>
+      <a-entity mindar-image-target="targetIndex: 8" id="target-8"><a-box visible="false" scale="0.001 0.001 0.001"></a-box></a-entity>
+    </a-scene>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
